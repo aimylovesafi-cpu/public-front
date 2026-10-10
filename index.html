@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes + AI Brain</title>
+<style>
+body{font-family: system-ui; max-width:700px; margin:0 auto; padding:20px; background:#0f0f0f; color:#fff}
+input, textarea{width:100%; padding:12px; margin:8px 0; border-radius:10px; border:1px solid #333; background:#1a1a1a; color:#fff}
+button{padding:12px 20px; border-radius:10px; border:0; background:#fff; color:#000; font-weight:bold; cursor:pointer}
+.card{background:#1a1a1a; padding:15px; border-radius:12px; margin:10px 0; border:1px solid #222}
+small{color:#888}
+</style>
+</head>
+<body>
+<h2>🧠 Notes متصل به مغز Private</h2>
+<input id="backendUrl" placeholder="https://private-brain.onrender.com">
+<button onclick="saveUrl()">ذخیره آدرس بک‌اند</button>
+<hr>
+<textarea id="prompt" placeholder="از AI بپرس..."></textarea>
+<button onclick="askAI()">بپرس از Groq</button>
+<div id="aiAnswer"></div>
+<hr>
+<input id="noteText" placeholder="یادداشت جدید">
+<button onclick="addNote()">ذخیره در Supabase</button>
+<div id="notes"></div>
+<script>
+let API = localStorage.getItem('api') || '';
+document.getElementById('backendUrl').value = API;
+function saveUrl(){ API=document.getElementById('backendUrl').value; localStorage.setItem('api',API); alert('ذخیره شد'); loadNotes(); }
+async function askAI(){
+  const p=document.getElementById('prompt').value;
+  if(!API) return alert('اول آدرس بک‌اند رو بذار');
+  const r=await fetch(API+'/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:p})});
+  const d=await r.json(); document.getElementById('aiAnswer').innerHTML='<div class=card>'+ (d.answer||d.error) +'</div>';
+}
+async function loadNotes(){
+  if(!API) return;
+  const r=await fetch(API+'/api/notes'); const d=await r.json();
+  document.getElementById('notes').innerHTML=d.map(n=>`<div class=card>${n.text}<br><small>${n.created_at||''}</small></div>`).join('');
+}
+async function addNote(){
+  const text=document.getElementById('noteText').value;
+  if(!API) return alert('اول آدرس بک‌اند رو بذار');
+  await fetch(API+'/api/notes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+  document.getElementById('noteText').value=''; loadNotes();
+}
+if(API) loadNotes();
+</script>
+</body>
+</html>
